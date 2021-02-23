@@ -1,0 +1,145 @@
+---
+title: "Plotly Presentation"
+author: "Dan Scholnick"
+date: "2/26/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r message=FALSE}
+library(plotly)
+library(tidyverse)
+```
+
+```{r message=FALSE}
+
+sales <- read.csv("/Users/dscholnick/Documents/MiDS/IST719/Asynch_719/sales.csv"
+                  , header = TRUE
+                  , stringsAsFactors = FALSE)
+sales <- data.frame(sales)
+```
+
+
+
+```{r }
+#Base R Histogram
+hist(sales$income)
+
+#Basic Plotly
+plot_ly(x = ~sales$income,
+        type = "histogram") 
+```
+
+
+``` {r}
+#Grouped Histogram for 2010-2012
+#Subset data into years
+s10 <- sales[sales$year=="2010",] 
+s11 <- sales[sales$year=="2011",] 
+s12 <- sales[sales$year=="2012",] 
+
+ax <- list(title = "units sold")
+ay <- list(title = "frequency")
+
+plot_ly(x = ~s10$units.sold, name = "2010", nbinsx = 25,
+        type = "histogram") %>% 
+  add_histogram(x = ~s11$units.sold, name = "2011") %>% 
+  add_histogram(x = ~s12$units.sold, name = "2012") %>% 
+  layout(xaxis = ax, yaxis = ay, title = "Units Sold 2010-2012")
+```
+
+
+```{r}
+#################### 
+#BARPLOT
+####################
+
+#Aggregate data to look at wine by unit.sold and type
+swt <- aggregate(sales$units.sold, list(sales$wine, sales$type), sum)
+colnames(swt) <- c("Wine", "Type", "Total.Sold")
+swt <- swt[order(swt$Total.Sold, decreasing = TRUE),]
+
+#df <- data[order(data$num,decreasing = TRUE),]
+
+BP <- ggplot(swt) +
+  aes(x = Wine , y = Total.Sold, fill = Type) +
+  geom_bar(aes(reorder(Wine,Total.Sold),Total.Sold),stat = "identity") +
+  coord_flip() +
+  ggtitle("Units sold by wine and type") +
+  theme( axis.title.y = element_blank()
+        , axis.ticks.y = element_blank(), axis.line.x = element_blank())
+BP
+
+#USE GGPLOTLY WITH THE GRAPHIC CREATED WITH GGPLOT
+ggplotly(BP)
+```
+
+
+
+```{r}
+#################### 
+#3D Plot
+####################
+
+swrt <- aggregate(sales$units.sold, list(sales$wine, sales$rep.region, sales$type), sum)
+colnames(swrt) <- c("wine", "region", "type", "total.Sold")
+
+x <- list(
+  title = "",
+  backgroundcolor="tan",
+  gridcolor="black",
+  showbackground=TRUE,
+  zerolinecolor="rgb(255,255,255"
+)
+
+y <- list(
+  backgroundcolor="gold",
+  gridcolor="green",
+  showbackground=TRUE,
+  zerolinecolor="rgb(255,255,255"
+)
+
+z <- list(
+  title = "total sold",
+  backgroundcolor="tan",
+  gridcolor="purple",
+  showbackground=TRUE,
+  zerolinecolor="rgb(255,255,255"
+)
+  
+p <- plot_ly(swrt, x = ~ wine, y = ~ region , z =~ total.Sold , color = ~ type, colors = c("darkred", " olivedrab")) %>%
+  add_markers()  %>%
+  layout(title = "Wine sales by region, wine and type"
+           ,scene = list(xaxis=x,zaxis=z,yaxis=y)
+         )
+p
+```
+
+
+
+
+
+```{r}
+#############
+#HEATMAP
+#############
+
+#Load data
+bb <- read.csv("http://datasets.flowingdata.com/ppg2008.csv",
+         header = TRUE)
+bb[order(bb$PTS, decreasing = FALSE),]
+row.names(bb) <- bb$Name
+bb <- bb[,2:20]
+
+#Create interactive NBA heatmap
+plot_ly(z = data.matrix(bb), 
+        x = colnames(bb), 
+        y = row.names(bb), 
+        type = "heatmap",
+        colors= "Set3") %>%
+  layout(title = "NBA STATS 2008")
+
+```
